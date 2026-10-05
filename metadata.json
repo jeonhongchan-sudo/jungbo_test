@@ -1,0 +1,6 @@
+{
+  "name": "정보처리기사 실기 단답형 10제 트레이너",
+  "description": "정보처리기사 실기 시험 대비 핵심 용어 단답형 10문항 무작위 출제, 실시간 직접 입력 및 자동 채점 서비스",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
