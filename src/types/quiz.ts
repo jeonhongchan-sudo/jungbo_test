@@ -13,6 +13,8 @@ export type ChapterCategory =
   | 'CH11_응용SW기초'
   | 'CH12_소프트웨어패키징';
 
+export type ExamPresetMode = 'ALL' | 'DI_GYEOL_EUNG' | 'TERMS';
+
 export type ImportanceRating = 'A' | 'B' | 'C';
 
 export type QuestionType =

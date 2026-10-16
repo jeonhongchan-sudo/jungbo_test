@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Question, ChapterCategory, WrongNoteItem } from './types/quiz';
+import { Question, ChapterCategory, WrongNoteItem, ExamPresetMode } from './types/quiz';
 import { generate10Questions, ALL_QUESTIONS } from './data/questions';
 import { gradeAnswer } from './utils/grader';
 import {
@@ -35,6 +35,7 @@ export default function App() {
   // Filters and Options
   const [selectedChapter, setSelectedChapter] = useState<ChapterCategory>('ALL');
   const [onlyAImportance, setOnlyAImportance] = useState<boolean>(false);
+  const [presetMode, setPresetMode] = useState<ExamPresetMode>('ALL');
 
   // Timer State
   const [isTimerRunning, setIsTimerRunning] = useState<boolean>(false);
@@ -64,8 +65,8 @@ export default function App() {
 
   // 10문제 생성 함수
   const loadNew10Questions = useCallback(
-    (chapter = selectedChapter, onlyA = onlyAImportance) => {
-      const new10 = generate10Questions(chapter, onlyA);
+    (chapter = selectedChapter, onlyA = onlyAImportance, mode = presetMode) => {
+      const new10 = generate10Questions(chapter, onlyA, mode);
       setQuestions(new10);
       setUserAnswers({});
       setIsSubmitted(false);
@@ -75,8 +76,14 @@ export default function App() {
       // 스크롤 상단 이동
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
-    [selectedChapter, onlyAImportance]
+    [selectedChapter, onlyAImportance, presetMode]
   );
+
+  // 프리셋 모드(전체/디결응/용어) 변경 핸들러
+  const handleSelectPresetMode = (mode: ExamPresetMode) => {
+    setPresetMode(mode);
+    loadNew10Questions(selectedChapter, onlyAImportance, mode);
+  };
 
   // 초기 로딩 시 10문제 생성
   useEffect(() => {
@@ -246,7 +253,7 @@ export default function App() {
             correctCount={correctCount}
             totalQuestions={questions.length}
             wrongCount={wrongCount}
-            onRestart={() => loadNew10Questions()}
+            onRestart={() => loadNew10Questions(selectedChapter, onlyAImportance, presetMode)}
             onRetakeWrongOnly={wrongCount > 0 ? handleRetakeWrongOnly : undefined}
             onOpenWrongNotes={() => setIsWrongNotesOpen(true)}
             savedNotesCount={savedNotes.length}
@@ -255,18 +262,20 @@ export default function App() {
 
         {/* Top Control Bar */}
         <ExamControls
+          presetMode={presetMode}
+          onSelectPresetMode={handleSelectPresetMode}
           selectedChapter={selectedChapter}
           onSelectChapter={(ch) => {
             setSelectedChapter(ch);
-            loadNew10Questions(ch, onlyAImportance);
+            loadNew10Questions(ch, onlyAImportance, presetMode);
           }}
           onlyAImportance={onlyAImportance}
           onToggleOnlyA={() => {
             const nextOnlyA = !onlyAImportance;
             setOnlyAImportance(nextOnlyA);
-            loadNew10Questions(selectedChapter, nextOnlyA);
+            loadNew10Questions(selectedChapter, nextOnlyA, presetMode);
           }}
-          onGenerateNewExam={() => loadNew10Questions()}
+          onGenerateNewExam={() => loadNew10Questions(selectedChapter, onlyAImportance, presetMode)}
           answeredCount={answeredCount}
           totalQuestions={questions.length}
           onSubmitExam={handleSubmitExam}
