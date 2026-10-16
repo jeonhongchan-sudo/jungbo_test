@@ -14,6 +14,7 @@ import { part12_sql_queries } from './db/part12_sql_queries';
 import { part13_calc_networking } from './db/part13_calc_networking';
 import { part14_security_db_terms } from './db/part14_security_db_terms';
 import { part15_sw_hw_emerging } from './db/part15_sw_hw_emerging';
+import { part16_extra_terms } from './db/part16_extra_terms';
 
 export const ALL_QUESTIONS: Question[] = [
   ...part1_requirements,
@@ -30,7 +31,8 @@ export const ALL_QUESTIONS: Question[] = [
   ...part12_sql_queries,
   ...part13_calc_networking,
   ...part14_security_db_terms,
-  ...part15_sw_hw_emerging
+  ...part15_sw_hw_emerging,
+  ...part16_extra_terms
 ];
 
 /**
@@ -47,7 +49,7 @@ export function shuffleArray<T>(array: T[]): T[] {
 
 /**
  * 조건에 맞는 10문제 무작위 추출
- * - 500개 이상의 방대한 풀에서 중복 없이 골고루 10문제 선정
+ * - 515개의 방대한 풀에서 중복 없이 골고루 10문제 선정
  */
 export function generate10Questions(
   chapter: ChapterCategory = 'ALL',
