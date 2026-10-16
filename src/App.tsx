@@ -343,7 +343,7 @@ export default function App() {
 
       {/* Footer */}
       <footer className="border-t border-slate-200 bg-white py-6 mt-12 text-center text-xs text-slate-500">
-        <p>2025~2026 정보처리기사 실기 기출 및 핵심요약 기반 실전 300제 트레이너</p>
+        <p>2025~2026 정보처리기사 실기 기출 및 핵심요약 기반 실전 500제 트레이너 ({ALL_QUESTIONS.length}문항 수록)</p>
         <p className="mt-1 text-slate-400">오답노트 로컬 JSON 파일 내보내기/불러오기 영구 저장 지원</p>
       </footer>
 

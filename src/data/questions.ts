@@ -9,6 +9,11 @@ import { part7_security } from './db/part7_security';
 import { part8_network_os } from './db/part8_network_os';
 import { part9_programming_packaging } from './db/part9_programming_packaging';
 import { part10_advanced_exam } from './db/part10_advanced_exam';
+import { part11_code_variants } from './db/part11_code_variants';
+import { part12_sql_queries } from './db/part12_sql_queries';
+import { part13_calc_networking } from './db/part13_calc_networking';
+import { part14_security_db_terms } from './db/part14_security_db_terms';
+import { part15_sw_hw_emerging } from './db/part15_sw_hw_emerging';
 
 export const ALL_QUESTIONS: Question[] = [
   ...part1_requirements,
@@ -20,7 +25,12 @@ export const ALL_QUESTIONS: Question[] = [
   ...part7_security,
   ...part8_network_os,
   ...part9_programming_packaging,
-  ...part10_advanced_exam
+  ...part10_advanced_exam,
+  ...part11_code_variants,
+  ...part12_sql_queries,
+  ...part13_calc_networking,
+  ...part14_security_db_terms,
+  ...part15_sw_hw_emerging
 ];
 
 /**
@@ -37,7 +47,7 @@ export function shuffleArray<T>(array: T[]): T[] {
 
 /**
  * 조건에 맞는 10문제 무작위 추출
- * - 300개 이상의 방대한 풀에서 중복 없이 골고루 10문제 선정
+ * - 500개 이상의 방대한 풀에서 중복 없이 골고루 10문제 선정
  */
 export function generate10Questions(
   chapter: ChapterCategory = 'ALL',
