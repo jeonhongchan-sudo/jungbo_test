@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { Award, RotateCcw, AlertTriangle, CheckCircle2, ChevronDown, Bookmark } from 'lucide-react';
+import { Award, RotateCcw, AlertTriangle, CheckCircle2, ChevronDown, Bookmark, BarChart3, Sparkles } from 'lucide-react';
 
 interface ScoreReportProps {
   score: number;
@@ -10,7 +10,9 @@ interface ScoreReportProps {
   onRetakeWrongOnly?: () => void;
   wrongCount: number;
   onOpenWrongNotes: () => void;
+  onOpenStatistics: () => void;
   savedNotesCount: number;
+  graduatedNotesCount?: number;
 }
 
 export const ScoreReport: React.FC<ScoreReportProps> = ({
@@ -21,7 +23,9 @@ export const ScoreReport: React.FC<ScoreReportProps> = ({
   onRetakeWrongOnly,
   wrongCount,
   onOpenWrongNotes,
-  savedNotesCount
+  onOpenStatistics,
+  savedNotesCount,
+  graduatedNotesCount = 0
 }) => {
   const isPass = score >= 60;
 
@@ -43,6 +47,17 @@ export const ScoreReport: React.FC<ScoreReportProps> = ({
           isPass ? 'bg-emerald-400' : 'bg-rose-400'
         }`}
       />
+
+      {/* Graduated wrong notes banner */}
+      {graduatedNotesCount > 0 && (
+        <div className="mb-5 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs sm:text-sm text-emerald-900 flex items-center gap-2.5 shadow-2xs animate-in fade-in slide-in-from-top-2">
+          <Sparkles className="w-5 h-5 text-emerald-600 shrink-0" />
+          <div>
+            <strong>축하합니다! 🎓</strong> 오답노트에 보관되어 있던 문제 중 정답을 맞힌{' '}
+            <strong className="text-emerald-700 underline">{graduatedNotesCount}문제</strong>가 오답노트에서 자동으로 삭제(마스터)되었습니다!
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col md:flex-row items-center justify-between gap-6">
         {/* Left Side: Score & Pass Status */}
@@ -93,7 +108,7 @@ export const ScoreReport: React.FC<ScoreReportProps> = ({
           {wrongCount > 0 && onRetakeWrongOnly && (
             <button
               onClick={onRetakeWrongOnly}
-              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 transition-colors shadow-xs"
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 transition-colors shadow-xs cursor-pointer"
             >
               <RotateCcw className="w-4 h-4" /> 틀린 {wrongCount}문제만 다시 풀기
             </button>
@@ -101,14 +116,22 @@ export const ScoreReport: React.FC<ScoreReportProps> = ({
 
           <button
             onClick={onRestart}
-            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-200 transition-colors"
+            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-200 transition-colors cursor-pointer"
           >
-            <RotateCcw className="w-4 h-4" /> 새 10문제 생성하여 풀기
+            <RotateCcw className="w-4 h-4" /> 새 10문제 풀기
+          </button>
+
+          <button
+            onClick={onOpenStatistics}
+            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition-colors cursor-pointer"
+          >
+            <BarChart3 className="w-4 h-4 text-indigo-600" />
+            오답 분석 통계
           </button>
 
           <button
             onClick={onOpenWrongNotes}
-            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 transition-colors"
+            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 transition-colors cursor-pointer"
           >
             <Bookmark className="w-4 h-4 text-amber-500" />
             오답노트 ({savedNotesCount})

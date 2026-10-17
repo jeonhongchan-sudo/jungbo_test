@@ -13,8 +13,6 @@ export type ChapterCategory =
   | 'CH11_응용SW기초'
   | 'CH12_소프트웨어패키징';
 
-export type ExamPresetMode = 'ALL' | 'DI_GYEOL_EUNG' | 'TERMS';
-
 export type ImportanceRating = 'A' | 'B' | 'C';
 
 export type QuestionType =
@@ -22,6 +20,7 @@ export type QuestionType =
   | 'BLANK'      // 괄호/빈칸 채우기
   | 'CODE'       // 프로그래밍 실행 결과형
   | 'CALC'       // 계산식/수치형
+  | 'SQL'        // SQL 쿼리 및 결과
   | 'SELECT';    // 보기 선택형
 
 export interface Question {

@@ -1,10 +1,8 @@
 import React from 'react';
-import { ChapterCategory, ExamPresetMode } from '../types/quiz';
-import { Sparkles, CheckCircle, Flame, Filter, Clock, Layers, BookA, LayoutGrid } from 'lucide-react';
+import { ChapterCategory } from '../types/quiz';
+import { Sparkles, CheckCircle, Flame, Filter, Clock, BarChart3, Bookmark } from 'lucide-react';
 
 interface ExamControlsProps {
-  presetMode: ExamPresetMode;
-  onSelectPresetMode: (mode: ExamPresetMode) => void;
   selectedChapter: ChapterCategory;
   onSelectChapter: (ch: ChapterCategory) => void;
   onlyAImportance: boolean;
@@ -17,11 +15,13 @@ interface ExamControlsProps {
   timeLeft: number;
   isTimerRunning: boolean;
   onToggleTimer: () => void;
+  savedNotesCount: number;
+  onOpenWrongNotes: () => void;
+  onOpenStatistics: () => void;
+  isWrongNotesMode?: boolean;
 }
 
 export const ExamControls: React.FC<ExamControlsProps> = ({
-  presetMode,
-  onSelectPresetMode,
   selectedChapter,
   onSelectChapter,
   onlyAImportance,
@@ -33,7 +33,11 @@ export const ExamControls: React.FC<ExamControlsProps> = ({
   isSubmitted,
   timeLeft,
   isTimerRunning,
-  onToggleTimer
+  onToggleTimer,
+  savedNotesCount,
+  onOpenWrongNotes,
+  onOpenStatistics,
+  isWrongNotesMode = false
 }) => {
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -45,116 +49,46 @@ export const ExamControls: React.FC<ExamControlsProps> = ({
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs mb-6">
-      {/* Quick Mode Selection Bar */}
-      <div className="pb-3 mb-3 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2.5">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-bold text-slate-500 mr-1 flex items-center gap-1">
-            <LayoutGrid className="w-3.5 h-3.5 text-slate-400" />
-            집중 학습 모드:
+      {/* Wrong Notes Mode Banner (if active) */}
+      {isWrongNotesMode && (
+        <div className="mb-4 p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 font-bold">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping inline-block" />
+            <span>🎯 오답노트 집중 훈련 모드 진행 중</span>
+          </div>
+          <span className="text-[11px] text-amber-800">
+            문제를 풀어 정답을 맞히면 오답노트에서 <strong>자동으로 삭제(졸업)</strong>됩니다!
           </span>
-
-          {/* 전체 종합 버튼 */}
-          <button
-            onClick={() => onSelectPresetMode('ALL')}
-            type="button"
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              presetMode === 'ALL'
-                ? 'bg-slate-800 text-white shadow-xs'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            전체 종합 (1~12장)
-          </button>
-
-          {/* 디결응 버튼 */}
-          <button
-            onClick={() => onSelectPresetMode('DI_GYEOL_EUNG')}
-            type="button"
-            title="디자인패턴 + 결합도 + 응집도 집중 훈련 모드"
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
-              presetMode === 'DI_GYEOL_EUNG'
-                ? 'bg-purple-600 text-white border-purple-600 shadow-sm shadow-purple-200 ring-2 ring-purple-300'
-                : 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100 hover:border-purple-300'
-            }`}
-          >
-            <Layers className="w-3.5 h-3.5" />
-            <span>디결응</span>
-            <span className={`text-[10px] px-1.5 py-0.2 rounded-md ${
-              presetMode === 'DI_GYEOL_EUNG' ? 'bg-purple-700 text-purple-100' : 'bg-purple-200/70 text-purple-800'
-            }`}>
-              디자인패턴·결합도·응집도
-            </span>
-          </button>
-
-          {/* 용어 버튼 */}
-          <button
-            onClick={() => onSelectPresetMode('TERMS')}
-            type="button"
-            title="네트워크, SW, HW, 데이터베이스, 보안 핵심 단답형 용어 연습 모드"
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
-              presetMode === 'TERMS'
-                ? 'bg-teal-600 text-white border-teal-600 shadow-sm shadow-teal-200 ring-2 ring-teal-300'
-                : 'bg-teal-50 text-teal-700 border-teal-200 hover:bg-teal-100 hover:border-teal-300'
-            }`}
-          >
-            <BookA className="w-3.5 h-3.5" />
-            <span>용어</span>
-            <span className={`text-[10px] px-1.5 py-0.2 rounded-md ${
-              presetMode === 'TERMS' ? 'bg-teal-700 text-teal-100' : 'bg-teal-200/70 text-teal-800'
-            }`}>
-              NW·SW·HW·DB·보안
-            </span>
-          </button>
         </div>
-
-        {/* Current Mode Status Label */}
-        <div className="text-xs text-slate-500 font-medium">
-          {presetMode === 'DI_GYEOL_EUNG' && (
-            <span className="text-purple-700 font-semibold flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-purple-500 animate-ping inline-block" />
-              디자인패턴 / 결합도 / 응집도 10문항 집중 출제 중
-            </span>
-          )}
-          {presetMode === 'TERMS' && (
-            <span className="text-teal-700 font-semibold flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-teal-500 animate-ping inline-block" />
-              NW · SW · HW · DB · 보안 단답형 용어 10문항 출제 중
-            </span>
-          )}
-          {presetMode === 'ALL' && (
-            <span className="text-slate-600 font-medium">
-              실전 기출 및 전 단원 통합 10문항 출제 중
-            </span>
-          )}
-        </div>
-      </div>
+      )}
 
       {/* Top Filter and Generator Bar */}
       <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
         {/* Left: Options & Chapter Filter */}
         <div className="flex flex-wrap items-center gap-2.5">
-          {presetMode !== 'DI_GYEOL_EUNG' && (
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 bg-slate-100 px-3 py-2 rounded-xl">
-              <Filter className="w-3.5 h-3.5 text-slate-500" />
-              <span>단원 선택:</span>
-              <select
-                value={selectedChapter}
-                onChange={(e) => onSelectChapter(e.target.value as ChapterCategory)}
-                className="bg-transparent font-bold text-indigo-700 outline-hidden cursor-pointer"
-              >
-                <option value="ALL">전체 과목 (종합)</option>
-                <option value="CH1_요구사항확인">1장 요구사항 확인</option>
-                <option value="CH2_데이터입출력">2장 데이터 입·출력</option>
-                <option value="CH4_서버프로그램">4장 서버 프로그램</option>
-                <option value="CH5_인터페이스">5장 인터페이스 구현</option>
-                <option value="CH7_애플리케이션테스트">7장 애플리케이션 테스트</option>
-                <option value="CH8_SQL응용">8장 SQL 응용</option>
-                <option value="CH9_소프트웨어보안">9장 SW 개발 보안</option>
-                <option value="CH11_응용SW기초">11장 응용 SW 기초 기술</option>
-                <option value="CH12_소프트웨어패키징">12장 제품 SW 패키징</option>
-              </select>
-            </div>
-          )}
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 bg-slate-100 px-3 py-2 rounded-xl">
+            <Filter className="w-3.5 h-3.5 text-slate-500" />
+            <span>단원 선택:</span>
+            <select
+              value={selectedChapter}
+              onChange={(e) => onSelectChapter(e.target.value as ChapterCategory)}
+              className="bg-transparent font-bold text-indigo-700 outline-hidden cursor-pointer"
+            >
+              <option value="ALL">전체 과목 (종합 10제)</option>
+              <option value="CH1_요구사항확인">1장 요구사항 확인</option>
+              <option value="CH2_데이터입출력">2장 데이터 입·출력</option>
+              <option value="CH3_통합구현">3장 통합 구현</option>
+              <option value="CH4_서버프로그램">4장 서버 프로그램 구현</option>
+              <option value="CH5_인터페이스">5장 인터페이스 구현</option>
+              <option value="CH6_화면설계">6장 화면 설계</option>
+              <option value="CH7_애플리케이션테스트">7장 애플리케이션 테스트</option>
+              <option value="CH8_SQL응용">8장 SQL 응용</option>
+              <option value="CH9_소프트웨어보안">9장 SW 개발 보안</option>
+              <option value="CH10_프로그래밍언어">10장 프로그래밍 언어 (C/Java/Python)</option>
+              <option value="CH11_응용SW기초">11장 응용 SW 기초 (NW/OS)</option>
+              <option value="CH12_소프트웨어패키징">12장 제품 SW 패키징</option>
+            </select>
+          </div>
 
           <button
             onClick={onToggleOnlyA}
@@ -184,6 +118,17 @@ export const ExamControls: React.FC<ExamControlsProps> = ({
               {isTimerRunning ? `제한시간 ${formatTime(timeLeft)}` : '타이머 15분'}
             </button>
           )}
+
+          {/* Quick Access to Statistics */}
+          <button
+            onClick={onOpenStatistics}
+            type="button"
+            title="오답 분석 및 취약 단원 통계 그래프"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-white text-indigo-700 border border-indigo-200 hover:bg-indigo-50 transition-colors shadow-2xs cursor-pointer"
+          >
+            <BarChart3 className="w-3.5 h-3.5 text-indigo-600" />
+            <span>오답 통계 그래프</span>
+          </button>
         </div>
 
         {/* Right: Problem Generator Button */}

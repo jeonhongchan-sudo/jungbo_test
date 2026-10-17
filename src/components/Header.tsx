@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, Award, CheckCircle2, Bookmark, Layers } from 'lucide-react';
+import { BookOpen, Award, CheckCircle2, Bookmark, Layers, BarChart3 } from 'lucide-react';
 
 interface HeaderProps {
   currentRound: number;
@@ -8,6 +8,7 @@ interface HeaderProps {
   totalQuestionPool: number;
   wrongNotesCount: number;
   onOpenWrongNotes: () => void;
+  onOpenStatistics: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -16,7 +17,8 @@ export const Header: React.FC<HeaderProps> = ({
   averageScore,
   totalQuestionPool,
   wrongNotesCount,
-  onOpenWrongNotes
+  onOpenWrongNotes,
+  onOpenStatistics
 }) => {
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
@@ -41,7 +43,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           {totalSolved > 0 && (
             <div className="hidden md:flex items-center gap-2.5 text-xs bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200/80">
               <div className="flex items-center gap-1.5 text-slate-600">
@@ -56,10 +58,21 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           )}
 
+          {/* 오답 통계 버튼 */}
+          <button
+            onClick={onOpenStatistics}
+            type="button"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition-colors shadow-2xs cursor-pointer"
+          >
+            <BarChart3 className="w-3.5 h-3.5 text-indigo-600" />
+            <span>오답 통계</span>
+          </button>
+
+          {/* 오답노트 버튼 */}
           <button
             onClick={onOpenWrongNotes}
             type="button"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100 transition-colors shadow-2xs"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100 transition-colors shadow-2xs cursor-pointer"
           >
             <Bookmark className="w-3.5 h-3.5 fill-amber-500 text-amber-600" />
             <span>오답노트</span>
@@ -72,4 +85,3 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
-

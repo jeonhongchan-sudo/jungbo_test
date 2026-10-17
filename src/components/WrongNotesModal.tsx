@@ -1,22 +1,17 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { Question, WrongNoteItem } from '../types/quiz';
 import {
   X,
   Trash2,
   BookmarkCheck,
   PlayCircle,
-  Download,
-  Upload,
   Search,
-  AlertCircle,
+  Flame,
+  BarChart3,
   CheckCircle2,
-  Calendar,
-  Flame
+  Sparkles
 } from 'lucide-react';
-import {
-  exportWrongNotesToJson,
-  importWrongNotesFromJson
-} from '../utils/wrongNoteStorage';
+import { shuffleArray } from '../data/questions';
 
 interface WrongNotesModalProps {
   isOpen: boolean;
@@ -25,7 +20,7 @@ interface WrongNotesModalProps {
   onRemoveQuestion: (id: string) => void;
   onClearAll: () => void;
   onStartQuizWithSaved: (questions: Question[]) => void;
-  onRefreshNotes: () => void;
+  onOpenStatistics: () => void;
 }
 
 export const WrongNotesModal: React.FC<WrongNotesModalProps> = ({
@@ -35,14 +30,9 @@ export const WrongNotesModal: React.FC<WrongNotesModalProps> = ({
   onRemoveQuestion,
   onClearAll,
   onStartQuizWithSaved,
-  onRefreshNotes
+  onOpenStatistics
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [importStatus, setImportStatus] = useState<{
-    type: 'success' | 'error';
-    message: string;
-  } | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
 
@@ -56,30 +46,6 @@ export const WrongNotesModal: React.FC<WrongNotesModalProps> = ({
     );
   });
 
-  const handleExport = () => {
-    exportWrongNotesToJson();
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = event.target?.result as string;
-      const res = importWrongNotesFromJson(content);
-      if (res.success) {
-        setImportStatus({ type: 'success', message: res.message });
-        onRefreshNotes();
-      } else {
-        setImportStatus({ type: 'error', message: res.message });
-      }
-      setTimeout(() => setImportStatus(null), 4000);
-    };
-    reader.readAsText(file);
-    e.target.value = '';
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs">
       <div className="bg-white rounded-3xl w-full max-w-3xl max-h-[88vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
@@ -92,102 +58,73 @@ export const WrongNotesModal: React.FC<WrongNotesModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-bold text-lg sm:text-xl text-slate-900">
-                  누적 오답노트 & 복습 보관함
+                  누적 오답노트 & 취약점 관리
                 </h3>
                 <span className="text-xs px-2 py-0.5 rounded-full font-bold bg-amber-100 text-amber-800">
                   총 {savedNotes.length}문항
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                시험 제출 시 틀린 문제가 자동 누적되며, 로컬 JSON 파일로 영구 백업 및 복원이 가능합니다.
+                틀린 문제는 자동 누적되며, 다시 풀어 맞히면 오답노트에서 자동으로 삭제되어 모르는 문제만 남습니다.
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+            className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Action & Search Bar */}
+        {/* Action & Search Bar (Cleaned up: No JSON, added Stats button) */}
         <div className="px-5 py-3 border-b border-slate-100 bg-white flex flex-col sm:flex-row items-center justify-between gap-3">
           {/* Search Box */}
-          <div className="relative w-full sm:w-64">
+          <div className="relative w-full sm:w-72">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="문제 또는 정답 검색..."
+              placeholder="문제, 정답 또는 단원 검색..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl bg-slate-100 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-hidden"
             />
           </div>
 
-          {/* Export / Import Buttons */}
+          {/* Quick Actions: Open Statistics */}
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-            <input
-              type="file"
-              ref={fileInputRef}
-              accept=".json"
-              onChange={handleFileUpload}
-              className="hidden"
-            />
-
             <button
-              onClick={() => fileInputRef.current?.click()}
-              title="로컬 JSON 파일에서 오답노트 불러오기"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs"
+              onClick={() => {
+                onClose();
+                onOpenStatistics();
+              }}
+              title="단원별, 문제 유형별 오답 통계 그래프 보기"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition-colors shadow-2xs cursor-pointer"
             >
-              <Upload className="w-3.5 h-3.5 text-slate-500" />
-              JSON 불러오기
-            </button>
-
-            <button
-              onClick={handleExport}
-              disabled={savedNotes.length === 0}
-              title="현재 오답노트를 JSON 파일로 내 PC에 저장"
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors shadow-2xs ${
-                savedNotes.length > 0
-                  ? 'bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100'
-                  : 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
-              }`}
-            >
-              <Download className="w-3.5 h-3.5" />
-              JSON 저장(백업)
+              <BarChart3 className="w-3.5 h-3.5 text-indigo-600" />
+              오답 분석 통계 그래프
             </button>
           </div>
         </div>
 
-        {/* Status message on import */}
-        {importStatus && (
-          <div
-            className={`px-5 py-2 text-xs flex items-center gap-2 ${
-              importStatus.type === 'success'
-                ? 'bg-emerald-50 text-emerald-800 border-b border-emerald-100'
-                : 'bg-rose-50 text-rose-800 border-b border-rose-100'
-            }`}
-          >
-            {importStatus.type === 'success' ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-            ) : (
-              <AlertCircle className="w-4 h-4 text-rose-600" />
-            )}
-            <span>{importStatus.message}</span>
-          </div>
-        )}
+        {/* Smart Hint Bar */}
+        <div className="px-5 py-2 bg-amber-50/70 border-b border-amber-100 text-[11px] text-amber-800 flex items-center gap-1.5">
+          <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+          <span>
+            <strong>스마트 마스터 시스템</strong>: 아래 &apos;오답노트 10문제 집중 풀기&apos;로 문제를 풀어 맞히게 되면, 오답노트에서 자동으로 삭제(졸업)됩니다.
+          </span>
+        </div>
 
         {/* Notes List */}
         <div className="p-5 sm:p-6 overflow-y-auto space-y-4 flex-1">
           {savedNotes.length === 0 ? (
             <div className="py-16 text-center text-slate-400">
-              <BookmarkCheck className="w-14 h-14 mx-auto mb-3 opacity-20 text-slate-600" />
-              <p className="font-bold text-base text-slate-600">
-                아직 저장된 오답노트가 없습니다.
+              <CheckCircle2 className="w-14 h-14 mx-auto mb-3 text-emerald-400 opacity-60" />
+              <p className="font-bold text-base text-slate-700">
+                현재 보관 중인 오답노트가 없습니다.
               </p>
-              <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
-                10문제를 풀고 제출하면 틀린 문제들이 자동으로 이곳에 기록되며, 언제든 JSON 파일로 저장하거나 불러올 수 있습니다.
+              <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto leading-relaxed">
+                10문제를 풀고 제출 시 틀린 문제가 자동 보관되며, 다시 풀어서 맞히면 이곳에서 자동으로 삭제되어 진정한 취약점만 남게 됩니다.
               </p>
             </div>
           ) : filteredNotes.length === 0 ? (
@@ -209,7 +146,7 @@ export const WrongNotesModal: React.FC<WrongNotesModalProps> = ({
                         {q.chapterTitle}
                       </span>
                       <span className="text-xs font-bold px-1.5 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200">
-                        {q.importance}
+                        {q.importance}등급
                       </span>
                       {item.wrongCount > 0 && (
                         <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-rose-100 text-rose-800">
@@ -221,8 +158,8 @@ export const WrongNotesModal: React.FC<WrongNotesModalProps> = ({
 
                     <button
                       onClick={() => onRemoveQuestion(q.id)}
-                      className="text-slate-400 hover:text-rose-600 p-1 rounded-md transition-colors"
-                      title="오답노트에서 삭제"
+                      className="text-slate-400 hover:text-rose-600 p-1 rounded-md transition-colors cursor-pointer"
+                      title="오답노트에서 수동 삭제"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -249,7 +186,7 @@ export const WrongNotesModal: React.FC<WrongNotesModalProps> = ({
                     <div className="flex flex-wrap items-baseline gap-1.5">
                       <span className="font-bold text-indigo-700">모범 정답:</span>
                       <strong className="text-slate-900">{q.standardAnswer}</strong>
-                      {q.acceptedAnswers.length > 0 && (
+                      {q.acceptedAnswers && q.acceptedAnswers.length > 0 && (
                         <span className="text-slate-500">
                           (허용 정답: {q.acceptedAnswers.join(', ')})
                         </span>
@@ -270,11 +207,11 @@ export const WrongNotesModal: React.FC<WrongNotesModalProps> = ({
           <div className="p-4 border-t border-slate-200 bg-slate-50 flex flex-col sm:flex-row items-center justify-between gap-3">
             <button
               onClick={() => {
-                if (window.confirm('오답노트의 모든 문제를 삭제하시겠습니까?')) {
+                if (window.confirm('오답노트의 모든 문제를 완전히 비우시겠습니까?')) {
                   onClearAll();
                 }
               }}
-              className="text-xs text-rose-600 hover:text-rose-800 font-medium px-3 py-1.5 rounded-lg hover:bg-rose-50 transition-colors"
+              className="text-xs text-rose-600 hover:text-rose-800 font-medium px-3 py-1.5 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
             >
               전체 비우기
             </button>
@@ -282,14 +219,14 @@ export const WrongNotesModal: React.FC<WrongNotesModalProps> = ({
             <div className="flex items-center gap-2.5 w-full sm:w-auto">
               <button
                 onClick={() => {
-                  const sampled = savedNotes.map((n) => n.question).slice(0, 10);
+                  const sampled = shuffleArray(savedNotes.map((n) => n.question)).slice(0, 10);
                   onStartQuizWithSaved(sampled);
                   onClose();
                 }}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-200 transition-colors"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-200 transition-colors cursor-pointer"
               >
                 <PlayCircle className="w-4 h-4" />
-                오답노트 10문제 집중 풀기
+                오답노트 10문제 집중 풀기 (맞히면 삭제)
               </button>
             </div>
           </div>

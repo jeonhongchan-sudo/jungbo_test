@@ -1,4 +1,4 @@
-import { Question, WrongNoteItem, WrongNotesExportData } from '../types/quiz';
+import { Question, WrongNoteItem } from '../types/quiz';
 
 const STORAGE_KEY = 'infogisa_wrong_notes_v2';
 
@@ -65,6 +65,31 @@ export function recordWrongQuestions(
 }
 
 /**
+ * 오답노트에 있던 문제 중 정답을 맞힌 문제를 오답노트에서 자동 삭제
+ * (오답노트에서 다시 풀거나 일반 시험에서 정답 처리된 문제)
+ */
+export function removeCorrectQuestions(correctQuestionIds: string[]): {
+  updatedNotes: WrongNoteItem[];
+  removedCount: number;
+} {
+  if (!correctQuestionIds || correctQuestionIds.length === 0) {
+    const current = getSavedWrongNotes();
+    return { updatedNotes: current, removedCount: 0 };
+  }
+
+  const current = getSavedWrongNotes();
+  const correctSet = new Set(correctQuestionIds);
+  const updatedNotes = current.filter((item) => !correctSet.has(item.questionId));
+  const removedCount = current.length - updatedNotes.length;
+
+  if (removedCount > 0) {
+    saveWrongNotes(updatedNotes);
+  }
+
+  return { updatedNotes, removedCount };
+}
+
+/**
  * 수동 북마크 토글
  */
 export function toggleWrongNoteBookmark(question: Question): WrongNoteItem[] {
@@ -103,77 +128,4 @@ export function removeWrongNote(questionId: string): WrongNoteItem[] {
  */
 export function clearAllWrongNotes(): void {
   localStorage.removeItem(STORAGE_KEY);
-}
-
-/**
- * JSON 파일로 다운로드 (로컬 파일 저장)
- */
-export function exportWrongNotesToJson(): void {
-  const notes = getSavedWrongNotes();
-  const exportData: WrongNotesExportData = {
-    version: '1.0',
-    exportedAt: new Date().toISOString(),
-    totalNotes: notes.length,
-    notes
-  };
-
-  const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-    type: 'application/json'
-  });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const dateStr = new Date().toISOString().slice(0, 10);
-  a.href = url;
-  a.download = `정보처리기사_실기_오답노트_${dateStr}.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-/**
- * 로컬 JSON 파일로부터 오답노트 불러오기(가져오기 및 병합)
- */
-export function importWrongNotesFromJson(jsonString: string): {
-  success: boolean;
-  count: number;
-  message: string;
-} {
-  try {
-    const data = JSON.parse(jsonString) as WrongNotesExportData;
-    if (!data || !Array.isArray(data.notes)) {
-      return { success: false, count: 0, message: '올바른 형식의 오답노트 JSON 파일이 아닙니다.' };
-    }
-
-    const current = getSavedWrongNotes();
-    const map = new Map<string, WrongNoteItem>();
-
-    current.forEach((item) => map.set(item.questionId, item));
-
-    data.notes.forEach((item) => {
-      if (item && item.questionId && item.question) {
-        const existing = map.get(item.questionId);
-        if (existing) {
-          existing.wrongCount = Math.max(existing.wrongCount, item.wrongCount || 1);
-          existing.lastWrongAnswer = item.lastWrongAnswer || existing.lastWrongAnswer;
-          existing.isBookmarked = true;
-        } else {
-          map.set(item.questionId, {
-            ...item,
-            isBookmarked: true
-          });
-        }
-      }
-    });
-
-    const merged = Array.from(map.values());
-    saveWrongNotes(merged);
-    return {
-      success: true,
-      count: data.notes.length,
-      message: `성공적으로 ${data.notes.length}개의 오답노트를 불러와 병합했습니다.`
-    };
-  } catch (e: any) {
-    return { success: false, count: 0, message: `파일 파싱 오류: ${e?.message || '알 수 없음'}` };
-  }
 }
