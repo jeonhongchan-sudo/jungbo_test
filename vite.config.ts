@@ -22,7 +22,7 @@ export default defineConfig(() => {
           display: 'standalone',
           start_url: '/',
           scope: '/',
-          orientation: 'portrait-primary',
+          orientation: 'any',
           icons: [
             {
               src: '/pwa-192x192.png',

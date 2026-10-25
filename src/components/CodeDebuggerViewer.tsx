@@ -248,7 +248,7 @@ export const CodeDebuggerViewer: React.FC<CodeDebuggerViewerProps> = ({
       </div>
 
       {/* Mobile/Tablet View Tab Toggle (Small Screens) */}
-      <div className="lg:hidden flex items-center justify-around bg-slate-950 px-2 py-1.5 border-b border-slate-800 text-xs">
+      <div className="md:hidden flex items-center justify-around bg-slate-950 px-2 py-1.5 border-b border-slate-800 text-xs">
         <button
           onClick={() => setMobileTab('SPLIT')}
           className={`flex-1 py-1 rounded-lg font-bold text-center transition-colors cursor-pointer ${
@@ -302,11 +302,11 @@ export const CodeDebuggerViewer: React.FC<CodeDebuggerViewerProps> = ({
       </div>
 
       {/* Main Grid: Code Viewer (Left) & Memory + Console (Right) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[380px] flex-1">
+      <div className="grid grid-cols-1 md:grid-cols-12 min-h-[380px] flex-1">
         {/* Code View with Line Highlight */}
         <div
-          className={`lg:col-span-6 bg-slate-950 p-3 font-mono text-xs overflow-x-auto border-b lg:border-b-0 lg:border-r border-slate-800 select-text ${
-            mobileTab === 'MEMORY' ? 'hidden lg:block' : 'block'
+          className={`md:col-span-6 bg-slate-950 p-3 font-mono text-xs overflow-x-auto border-b md:border-b-0 md:border-r border-slate-800 select-text ${
+            mobileTab === 'MEMORY' ? 'hidden md:block' : 'block'
           }`}
         >
           <div className="text-[11px] text-slate-500 font-semibold mb-2 flex items-center justify-between pb-1.5 border-b border-slate-800/60">
@@ -346,8 +346,8 @@ export const CodeDebuggerViewer: React.FC<CodeDebuggerViewerProps> = ({
 
         {/* Right Panel: Virtual Memory & Execution State */}
         <div
-          className={`lg:col-span-6 bg-slate-900/95 p-3 flex flex-col justify-between space-y-3 ${
-            mobileTab === 'CODE' ? 'hidden lg:flex' : 'flex'
+          className={`md:col-span-6 bg-slate-900/95 p-3 flex flex-col justify-between space-y-3 ${
+            mobileTab === 'CODE' ? 'hidden md:flex' : 'flex'
           }`}
         >
           {/* Virtual Memory Table */}
