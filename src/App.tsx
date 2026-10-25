@@ -24,6 +24,7 @@ import { ScoreReport } from './components/ScoreReport';
 import { WrongNotesModal } from './components/WrongNotesModal';
 import { StatisticsModal } from './components/StatisticsModal';
 import { CodeLabView } from './components/CodeLabView';
+import { OfflineIndicator } from './components/OfflineIndicator';
 import { Sparkles, CheckCircle2, Bookmark, BarChart3 } from 'lucide-react';
 
 const TIMER_INITIAL_SECONDS = 15 * 60; // 15분
@@ -426,6 +427,9 @@ export default function App() {
           handleStartWithSaved(sampled);
         }}
       />
+
+      {/* Offline Mode Alert */}
+      <OfflineIndicator />
     </div>
   );
 }

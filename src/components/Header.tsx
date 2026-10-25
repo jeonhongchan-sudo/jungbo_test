@@ -1,5 +1,6 @@
 import React from 'react';
 import { BookOpen, Award, CheckCircle2, Bookmark, Layers, BarChart3, Code2, Sparkles } from 'lucide-react';
+import { PWAInstallButton } from './PWAInstallButton';
 
 interface HeaderProps {
   activeTab: 'EXAM' | 'CODELAB';
@@ -89,8 +90,9 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         </div>
 
-        {/* Right Tools (Only for Exam Mode: Round, Wrong Notes, Stats) */}
+        {/* Right Tools (PWA Install Button, Round, Wrong Notes, Stats) */}
         <div className="flex items-center gap-2">
+          <PWAInstallButton />
           {activeTab === 'EXAM' && (
             <>
               {totalSolved > 0 && (
