@@ -6,6 +6,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Question, ChapterCategory, WrongNoteItem } from './types/quiz';
 import { generate10Questions, ALL_QUESTIONS, shuffleArray } from './data/questions';
+import { ALL_CODE_DEBUG_QUESTIONS } from './data/codeDebugQuestions';
 import { gradeAnswer } from './utils/grader';
 import {
   getSavedWrongNotes,
@@ -22,11 +23,15 @@ import { QuizCard } from './components/QuizCard';
 import { ScoreReport } from './components/ScoreReport';
 import { WrongNotesModal } from './components/WrongNotesModal';
 import { StatisticsModal } from './components/StatisticsModal';
+import { CodeLabView } from './components/CodeLabView';
 import { Sparkles, CheckCircle2, Bookmark, BarChart3 } from 'lucide-react';
 
 const TIMER_INITIAL_SECONDS = 15 * 60; // 15분
 
 export default function App() {
+  // Navigation State
+  const [activeTab, setActiveTab] = useState<'EXAM' | 'CODELAB'>('EXAM');
+
   // Session State
   const [questions, setQuestions] = useState<Question[]>([]);
   const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
@@ -261,18 +266,26 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
       <Header
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
         currentRound={examHistory.length}
         totalSolved={examHistory.length * 10}
         averageScore={averageScore}
         totalQuestionPool={ALL_QUESTIONS.length}
         wrongNotesCount={savedNotes.length}
+        codeLabCount={ALL_CODE_DEBUG_QUESTIONS.length}
         onOpenWrongNotes={() => setIsWrongNotesOpen(true)}
         onOpenStatistics={() => setIsStatisticsOpen(true)}
       />
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 flex-1 w-full">
-        {/* Exam Score Report Banner (when submitted) */}
-        {isSubmitted && (
+      {activeTab === 'CODELAB' ? (
+        <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 flex-1 w-full">
+          <CodeLabView />
+        </main>
+      ) : (
+        <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 flex-1 w-full">
+          {/* Exam Score Report Banner (when submitted) */}
+          {isSubmitted && (
           <ScoreReport
             score={score}
             correctCount={correctCount}
@@ -383,6 +396,7 @@ export default function App() {
           </div>
         </div>
       </main>
+      )}
 
       {/* Footer */}
       <footer className="border-t border-slate-200 bg-white py-6 mt-12 text-center text-xs text-slate-500">
