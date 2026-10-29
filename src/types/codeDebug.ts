@@ -7,6 +7,9 @@ export interface MemoryCell {
   name: string;       // e.g. "arr[0]", "p", "*p", "x", "root.val"
   type?: string;      // e.g. "int (4B)", "int*", "String ref", "struct Node*"
   value: string;      // e.g. "15", "1000번지 (&arr[0])", "'K'", "NULL"
+  previousValue?: string; // 직전 단계의 값 (e.g. "10")
+  transitionTrail?: string[]; // 누적 변화 이력 (e.g. ["10", "20", "10"])
+  changeNote?: string; // 변경 이유나 계산식 (e.g. "10 + 10 = 20")
   scope?: string;     // e.g. "Stack (main)", "Stack (recur-3)", "Heap", "Global/Static"
   isChanged?: boolean; // 이 단계에서 변경된 메모리인지 여부
 }

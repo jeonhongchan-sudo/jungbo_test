@@ -15,7 +15,12 @@ import {
   Pause,
   Maximize2,
   Minimize2,
-  X
+  X,
+  Activity,
+  ArrowRight,
+  Zap,
+  TrendingUp,
+  Clock
 } from 'lucide-react';
 
 interface CodeDebuggerViewerProps {
@@ -90,6 +95,104 @@ export const CodeDebuggerViewer: React.FC<CodeDebuggerViewerProps> = ({
 
   const currentStep: DebugStep = steps[currentStepIdx] || steps[0];
 
+  // Track variable transition history up to currentStepIdx (e.g. 10 -> 20 -> 10)
+  interface VariableTrace {
+    name: string;
+    address?: string;
+    type?: string;
+    scope?: string;
+    history: string[]; // e.g. ["10", "20", "10"]
+    currentValue: string;
+    previousValue: string | null;
+    hasChangedInCurrentStep: boolean;
+    changeNote?: string;
+  }
+
+  const variableTraces = React.useMemo<VariableTrace[]>(() => {
+    const traceMap = new Map<string, {
+      name: string;
+      address?: string;
+      type?: string;
+      scope?: string;
+      history: string[];
+      lastSeenValue: string;
+      lastSeenStep: number;
+      changeNote?: string;
+    }>();
+
+    for (let s = 0; s <= currentStepIdx; s++) {
+      const step = steps[s];
+      if (!step || !step.memoryState) continue;
+
+      for (const cell of step.memoryState) {
+        const key = cell.name;
+        if (!traceMap.has(key)) {
+          const initialHistory = cell.previousValue && cell.previousValue !== cell.value
+            ? [cell.previousValue, cell.value]
+            : [cell.value];
+
+          traceMap.set(key, {
+            name: cell.name,
+            address: cell.address,
+            type: cell.type,
+            scope: cell.scope,
+            history: cell.transitionTrail && cell.transitionTrail.length > 0
+              ? [...cell.transitionTrail]
+              : initialHistory,
+            lastSeenValue: cell.value,
+            lastSeenStep: s,
+            changeNote: s === currentStepIdx ? cell.changeNote : undefined
+          });
+        } else {
+          const item = traceMap.get(key)!;
+          if (cell.address) item.address = cell.address;
+          if (cell.type) item.type = cell.type;
+          if (cell.scope) item.scope = cell.scope;
+          if (s === currentStepIdx && cell.changeNote) {
+            item.changeNote = cell.changeNote;
+          }
+
+          if (cell.value !== item.lastSeenValue) {
+            item.history.push(cell.value);
+            item.lastSeenValue = cell.value;
+          }
+          item.lastSeenStep = s;
+        }
+      }
+    }
+
+    const result: VariableTrace[] = [];
+    traceMap.forEach((item) => {
+      const currentCell = currentStep.memoryState?.find((c) => c.name === item.name);
+
+      let prevVal: string | null = null;
+      if (item.history.length > 1) {
+        prevVal = item.history[item.history.length - 2];
+      } else if (currentCell?.previousValue) {
+        prevVal = currentCell.previousValue;
+      }
+
+      const currVal = currentCell ? currentCell.value : item.lastSeenValue;
+      const isChanged = currentCell?.isChanged ?? (prevVal !== null && prevVal !== currVal);
+
+      result.push({
+        name: item.name,
+        address: item.address,
+        type: item.type,
+        scope: item.scope,
+        history: currentCell?.transitionTrail && currentCell.transitionTrail.length > 0
+          ? currentCell.transitionTrail
+          : item.history,
+        currentValue: currVal,
+        previousValue: prevVal,
+        hasChangedInCurrentStep: Boolean(isChanged),
+        changeNote: currentCell?.changeNote || item.changeNote
+      });
+    });
+
+    return result;
+  }, [steps, currentStepIdx, currentStep]);
+
   const handlePrev = () => {
     setIsPlaying(false);
     setCurrentStepIdx((prev) => Math.max(0, prev - 1));
@@ -108,6 +211,11 @@ export const CodeDebuggerViewer: React.FC<CodeDebuggerViewerProps> = ({
   const handleLast = () => {
     setIsPlaying(false);
     setCurrentStepIdx(steps.length - 1);
+  };
+
+  const handleStepSelect = (idx: number) => {
+    setIsPlaying(false);
+    setCurrentStepIdx(idx);
   };
 
   // Code lines split
@@ -281,6 +389,41 @@ export const CodeDebuggerViewer: React.FC<CodeDebuggerViewerProps> = ({
         </button>
       </div>
 
+      {/* Step Quick Scrubber Timeline Bar */}
+      <div className="bg-slate-950/80 px-4 py-2 border-b border-slate-800 flex items-center gap-1.5 overflow-x-auto scrollbar-thin">
+        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mr-1 flex items-center gap-1 flex-shrink-0 select-none">
+          <Clock className="w-3 h-3 text-indigo-400" />
+          <span>실행 단계:</span>
+        </span>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {steps.map((st, sIdx) => {
+            const isCurrent = sIdx === currentStepIdx;
+            const isPast = sIdx < currentStepIdx;
+            return (
+              <button
+                key={sIdx}
+                onClick={() => handleStepSelect(sIdx)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all flex items-center gap-1 flex-shrink-0 cursor-pointer ${
+                  isCurrent
+                    ? 'bg-indigo-600 text-white shadow-md ring-1 ring-indigo-400 font-extrabold scale-105'
+                    : isPast
+                    ? 'bg-slate-850 hover:bg-slate-800 text-indigo-300 border border-slate-700/60'
+                    : 'bg-slate-900/60 hover:bg-slate-800 text-slate-500 border border-slate-800'
+                }`}
+                title={`Step ${sIdx + 1}: ${st.title}`}
+              >
+                <span>Step {sIdx + 1}</span>
+                {st.lineHighlight && (
+                  <span className="text-[9px] opacity-75 font-sans">
+                    (L{Array.isArray(st.lineHighlight) ? st.lineHighlight[0] : st.lineHighlight})
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Step Description Header */}
       <div className="bg-slate-850 px-4 py-3 border-b border-slate-800/80 flex items-start gap-3">
         <span className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 font-bold text-xs flex items-center justify-center border border-indigo-500/30">
@@ -350,6 +493,88 @@ export const CodeDebuggerViewer: React.FC<CodeDebuggerViewerProps> = ({
             mobileTab === 'CODE' ? 'hidden md:flex' : 'flex'
           }`}
         >
+          {/* Real-time Variable Transition Track (10 ➔ 20 ➔ 10) */}
+          {variableTraces.length > 0 && (
+            <div className="bg-slate-950/90 rounded-xl p-3 border border-indigo-900/50 space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold text-indigo-200">
+                <span className="flex items-center gap-1.5">
+                  <Activity className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>실시간 변수 값 변천 궤적 (Variable Trace)</span>
+                </span>
+                <span className="text-[10px] text-amber-300 font-mono bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800/40">
+                  순차 변화: 10 ➔ 20 ➔ 10
+                </span>
+              </div>
+
+              <div className="space-y-1.5 max-h-[140px] overflow-y-auto pr-1 scrollbar-thin">
+                {variableTraces.map((trace) => (
+                  <div
+                    key={trace.name}
+                    className={`flex flex-wrap items-center justify-between gap-2 p-2 rounded-lg transition-colors ${
+                      trace.hasChangedInCurrentStep
+                        ? 'bg-indigo-950/50 border border-amber-500/50 shadow-xs'
+                        : 'bg-slate-900/70 border border-slate-800/80'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      {trace.type && (
+                        <span className="text-[9px] font-mono text-indigo-300 bg-indigo-950/80 px-1.5 py-0.5 rounded border border-indigo-800/50">
+                          {trace.type}
+                        </span>
+                      )}
+                      <span className="text-xs font-bold font-mono text-white">
+                        {trace.name}
+                      </span>
+                      {trace.address && (
+                        <span className="text-[10px] font-mono text-slate-500 hidden sm:inline">
+                          ({trace.address})
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                      {trace.history.map((val, hIdx) => {
+                        const isLast = hIdx === trace.history.length - 1;
+                        return (
+                          <React.Fragment key={hIdx}>
+                            <span
+                              className={`px-2 py-0.5 rounded text-xs font-mono font-bold transition-all ${
+                                isLast
+                                  ? trace.hasChangedInCurrentStep
+                                    ? 'bg-amber-400/25 text-amber-200 border border-amber-400/70 ring-1 ring-amber-400/30'
+                                    : 'bg-indigo-600/35 text-indigo-100 border border-indigo-500/50'
+                                  : 'bg-slate-800/90 text-slate-400 border border-slate-700/50 line-through opacity-75'
+                              }`}
+                            >
+                              {val}
+                              {isLast && (
+                                <span className="ml-1 text-[9px] text-amber-300 font-sans font-normal">
+                                  (현재)
+                                </span>
+                              )}
+                            </span>
+                            {!isLast && (
+                              <span className="text-slate-500 text-xs font-bold select-none">
+                                ➔
+                              </span>
+                            )}
+                          </React.Fragment>
+                        );
+                      })}
+
+                      {trace.hasChangedInCurrentStep && (
+                        <span className="text-[10px] font-bold text-amber-300 bg-amber-950/70 border border-amber-600/40 px-2 py-0.5 rounded flex items-center gap-1 flex-shrink-0 animate-pulse ml-1">
+                          <Zap className="w-2.5 h-2.5 text-amber-400" />
+                          <span>{trace.changeNote || '값 갱신'}</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Virtual Memory Table */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -369,45 +594,77 @@ export const CodeDebuggerViewer: React.FC<CodeDebuggerViewerProps> = ({
                     <tr>
                       <th className="py-1.5 px-2.5">메모리 주소</th>
                       <th className="py-1.5 px-2">식별자/변수명</th>
-                      <th className="py-1.5 px-2">데이터 값</th>
+                      <th className="py-1.5 px-2">데이터 값 (이전 ➔ 현재)</th>
                       <th className="py-1.5 px-2">영역</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/60 text-[11px]">
-                    {currentStep.memoryState.map((cell, idx) => (
-                      <tr
-                        key={idx}
-                        className={`transition-colors ${
-                          cell.isChanged
-                            ? 'bg-amber-500/15 text-amber-200 font-bold'
-                            : 'text-slate-300 hover:bg-slate-800/40'
-                        }`}
-                      >
-                        <td className="py-1.5 px-2.5 text-indigo-300 font-semibold flex items-center gap-1">
-                          {cell.address}
-                          {cell.isChanged && (
-                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
-                          )}
-                        </td>
-                        <td className="py-1.5 px-2 font-bold text-slate-100">
-                          {cell.name}
-                        </td>
-                        <td className="py-1.5 px-2">
-                          <span
-                            className={`px-1.5 py-0.5 rounded text-[11px] ${
-                              cell.isChanged
-                                ? 'bg-amber-400/20 text-amber-300 border border-amber-500/30'
-                                : 'bg-slate-800 text-slate-200'
-                            }`}
-                          >
-                            {cell.value}
-                          </span>
-                        </td>
-                        <td className="py-1.5 px-2 text-[10px] text-slate-500">
-                          {cell.scope || 'Stack'}
-                        </td>
-                      </tr>
-                    ))}
+                    {currentStep.memoryState.map((cell, idx) => {
+                      const cellTrace = variableTraces.find((t) => t.name === cell.name);
+                      const hasChanged = cell.isChanged || (cellTrace && cellTrace.hasChangedInCurrentStep);
+                      const prevVal = cell.previousValue || (cellTrace && cellTrace.previousValue);
+
+                      return (
+                        <tr
+                          key={idx}
+                          className={`transition-colors ${
+                            hasChanged
+                              ? 'bg-amber-500/15 text-amber-200 font-bold'
+                              : 'text-slate-300 hover:bg-slate-800/40'
+                          }`}
+                        >
+                          <td className="py-2 px-2.5 text-indigo-300 font-semibold flex items-center gap-1">
+                            {cell.address}
+                            {hasChanged && (
+                              <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+                            )}
+                          </td>
+                          <td className="py-2 px-2 font-bold text-slate-100">
+                            {cell.name}
+                          </td>
+                          <td className="py-2 px-2">
+                            {hasChanged && prevVal && prevVal !== cell.value ? (
+                              <div className="flex flex-col gap-0.5">
+                                <div className="flex items-center gap-1.5 font-mono">
+                                  <span className="text-slate-400 line-through text-[10px] bg-slate-900 px-1.5 py-0.5 rounded border border-slate-700/60 font-medium">
+                                    {prevVal}
+                                  </span>
+                                  <span className="text-amber-400 font-bold text-xs">➔</span>
+                                  <span className="bg-amber-400/25 text-amber-200 font-bold text-xs px-2 py-0.5 rounded border border-amber-400/50 shadow-xs">
+                                    {cell.value}
+                                  </span>
+                                </div>
+                                {(cell.changeNote || cellTrace?.changeNote) && (
+                                  <span className="text-[10px] text-amber-300/80 font-sans">
+                                    {cell.changeNote || cellTrace?.changeNote}
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="flex flex-col gap-0.5">
+                                <span
+                                  className={`px-1.5 py-0.5 rounded text-[11px] font-mono ${
+                                    hasChanged
+                                      ? 'bg-amber-400/20 text-amber-300 border border-amber-500/30 font-bold'
+                                      : 'bg-slate-800 text-slate-200'
+                                  }`}
+                                >
+                                  {cell.value}
+                                </span>
+                                {cellTrace && cellTrace.history.length > 1 && (
+                                  <span className="text-[9px] text-slate-400 font-mono truncate max-w-[190px]">
+                                    이력: {cellTrace.history.join(' ➔ ')}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-2 px-2 text-[10px] text-slate-500">
+                            {cell.scope || 'Stack'}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

@@ -106,21 +106,31 @@ int main() {
       },
       {
         stepNumber: 2,
-        title: 'printf("%c ", **p++); 수행',
+        title: 'printf("%c ", **p++); 수행 (후위 포인터 이동)',
         lineHighlight: 5,
-        description: '**p는 arr[0]의 첫 글자 \'P\'. 후위 증감으로 p는 arr+1(1004번지)로 이동합니다.',
+        description: '**p는 현재 p가 가리키는 arr[0]("PROGRAM")의 첫 글자인 \'P\'를 취하여 출력합니다. 후위 연산(p++)에 의해 p는 1000번지(&arr[0])에서 1004번지(&arr[1])로 전진합니다.',
         memoryState: [
-          { address: '2000번지', name: 'p', type: 'char**', value: '1004번지 (&arr[1])', isChanged: true, scope: 'Stack' }
+          { address: '2000번지', name: 'p', type: 'char**', value: '1004번지 (&arr[1])', previousValue: '1000번지 (&arr[0])', isChanged: true, changeNote: 'arr[1] 주소로 4B 전진', scope: 'Stack' }
         ],
         consoleOutput: 'P '
       },
       {
         stepNumber: 3,
-        title: 'printf("%c ", *(*p + 2)); 및 printf("%s", *++p + 4); 수행',
-        lineHighlight: 7,
-        description: '*p는 "ENGINEER", +2 위치는 \'G\'. 다음으로 ++p로 arr+2("DATABASE") 이동 후 +4 오프셋 주소부터 출력하여 "BASE".',
+        title: 'printf("%c ", *(*p + 2)); 수행 (문자열 내 오프셋)',
+        lineHighlight: 6,
+        description: '*p는 arr[1]의 문자열 주소인 3010번지("ENGINEER")입니다. 여기에 +2(2바이트 오프셋)를 적용하여 3012번지의 문자 \'G\'를 출력합니다. (p 자체는 이동하지 않음)',
         memoryState: [
-          { address: '2000번지', name: 'p', type: 'char**', value: '1008번지 (&arr[2])', isChanged: true, scope: 'Stack' }
+          { address: '2000번지', name: 'p', type: 'char**', value: '1004번지 (&arr[1])', scope: 'Stack' }
+        ],
+        consoleOutput: 'P G '
+      },
+      {
+        stepNumber: 4,
+        title: 'printf("%s", *++p + 4); 수행 (전위 포인터 이동 후 문자열 출력)',
+        lineHighlight: 7,
+        description: '전위 연산(++p)에 의해 p가 먼저 arr[2](1008번지, "DATABASE")로 전진합니다. *p는 3020번지이고, 여기에 +4를 더해 3024번지("BASE\\0")를 %s로 출력합니다. 최종 출력: "P G BASE".',
+        memoryState: [
+          { address: '2000번지', name: 'p', type: 'char**', value: '1008번지 (&arr[2])', previousValue: '1004번지 (&arr[1])', isChanged: true, changeNote: 'arr[2] 주소로 4B 전진', scope: 'Stack' }
         ],
         consoleOutput: 'P G BASE'
       }
@@ -232,24 +242,75 @@ int main() {
       },
       {
         stepNumber: 2,
-        title: 'ins 노드 삽입 후 링크 포인터 갱신',
+        title: 'ins 노드 삽입 및 초기 합계 변수 설정',
         lineHighlight: 13,
-        description: 'ins.next = head->next(&n2). head->next = &ins. 연결 순서: n1(10) -> ins(15) -> n2(20) -> n3(30).',
+        description: 'ins.next = head->next(&n2), head->next = &ins로 노드가 삽입되어 순서가 n1(10) ➔ ins(15) ➔ n2(20) ➔ n3(30)이 됩니다. sum=0, count=0이 초기화됩니다.',
         memoryState: [
           { address: '1060번지', name: 'ins.val', value: '15', scope: 'Stack' },
           { address: '1064번지', name: 'ins.next', value: '1020번지 (&n2)', isChanged: true, scope: 'Stack' },
-          { address: '1004번지', name: 'n1.next', value: '1060번지 (&ins)', isChanged: true, scope: 'Stack' }
+          { address: '1004번지', name: 'n1.next', value: '1060번지 (&ins)', isChanged: true, scope: 'Stack' },
+          { address: '2000번지', name: 'sum', value: '0', scope: 'Stack' },
+          { address: '2004번지', name: 'count', value: '0', scope: 'Stack' },
+          { address: '2008번지', name: 'head', value: '1000번지 (&n1)', isChanged: true, scope: 'Stack' }
         ],
         consoleOutput: ''
       },
       {
         stepNumber: 3,
-        title: 'while 루프 순회 및 가중치 합계 계산',
+        title: '루프 1회차: n1(10) 처리 (count=1, sum=10)',
         lineHighlight: 16,
-        description: 'count=1: 10*1=10, count=2: 15*2=30, count=3: 20*3=60, count=4: 30*4=120. 총합 = 220 출력.',
+        description: 'head가 n1(10)을 가리킵니다. ++count로 count가 1이 되고, sum += 10 * 1 = 10. head는 head->next인 ins(1060번지)로 이동합니다.',
         memoryState: [
-          { address: '2000번지', name: 'sum', value: '220', isChanged: true, scope: 'Stack' },
-          { address: '2004번지', name: 'count', value: '4', isChanged: true, scope: 'Stack' }
+          { address: '2004번지', name: 'count', value: '1', previousValue: '0', isChanged: true, changeNote: '0 + 1 = 1', scope: 'Stack' },
+          { address: '2000번지', name: 'sum', value: '10', previousValue: '0', isChanged: true, changeNote: '0 + 10*1 = 10', scope: 'Stack' },
+          { address: '2008번지', name: 'head', value: '1060번지 (&ins)', isChanged: true, scope: 'Stack' }
+        ],
+        consoleOutput: ''
+      },
+      {
+        stepNumber: 4,
+        title: '루프 2회차: ins(15) 처리 (count=2, sum=40)',
+        lineHighlight: 16,
+        description: 'head가 ins(15)를 가리킵니다. ++count로 count가 2가 되고, sum += 15 * 2 = 30이 더해져 sum은 40이 됩니다. head는 n2(1020번지)로 이동합니다.',
+        memoryState: [
+          { address: '2004번지', name: 'count', value: '2', previousValue: '1', isChanged: true, changeNote: '1 + 1 = 2', scope: 'Stack' },
+          { address: '2000번지', name: 'sum', value: '40', previousValue: '10', isChanged: true, changeNote: '10 + 15*2 = 40', scope: 'Stack' },
+          { address: '2008번지', name: 'head', value: '1020번지 (&n2)', isChanged: true, scope: 'Stack' }
+        ],
+        consoleOutput: ''
+      },
+      {
+        stepNumber: 5,
+        title: '루프 3회차: n2(20) 처리 (count=3, sum=100)',
+        lineHighlight: 16,
+        description: 'head가 n2(20)을 가리킵니다. ++count로 count가 3이 되고, sum += 20 * 3 = 60이 더해져 sum은 100이 됩니다. head는 n3(1040번지)로 이동합니다.',
+        memoryState: [
+          { address: '2004번지', name: 'count', value: '3', previousValue: '2', isChanged: true, changeNote: '2 + 1 = 3', scope: 'Stack' },
+          { address: '2000번지', name: 'sum', value: '100', previousValue: '40', isChanged: true, changeNote: '40 + 20*3 = 100', scope: 'Stack' },
+          { address: '2008번지', name: 'head', value: '1040번지 (&n3)', isChanged: true, scope: 'Stack' }
+        ],
+        consoleOutput: ''
+      },
+      {
+        stepNumber: 6,
+        title: '루프 4회차: n3(30) 처리 (count=4, sum=220)',
+        lineHighlight: 16,
+        description: 'head가 n3(30)을 가리킵니다. ++count로 count가 4가 되고, sum += 30 * 4 = 120이 더해져 sum은 220이 됩니다. head는 n3->next인 NULL로 이동합니다.',
+        memoryState: [
+          { address: '2004번지', name: 'count', value: '4', previousValue: '3', isChanged: true, changeNote: '3 + 1 = 4', scope: 'Stack' },
+          { address: '2000번지', name: 'sum', value: '220', previousValue: '100', isChanged: true, changeNote: '100 + 30*4 = 220', scope: 'Stack' },
+          { address: '2008번지', name: 'head', value: 'NULL', isChanged: true, scope: 'Stack' }
+        ],
+        consoleOutput: ''
+      },
+      {
+        stepNumber: 7,
+        title: 'while 루프 종료 및 printf("%d", sum) 출력',
+        lineHighlight: 19,
+        description: 'head가 NULL이므로 while 루프가 완전히 종료됩니다. 최종 계산된 sum(220)이 표준 출력에 인쇄됩니다.',
+        memoryState: [
+          { address: '2000번지', name: 'sum', value: '220', scope: 'Stack' },
+          { address: '2004번지', name: 'count', value: '4', scope: 'Stack' }
         ],
         consoleOutput: '220'
       }
@@ -397,30 +458,88 @@ int main() {
     steps: [
       {
         stepNumber: 1,
-        title: 'i=1 및 i=2 반복 실행',
-        lineHighlight: 7,
-        description: 'i=1 (1%3=1): case 1(+5) -> break 없이 case 2(+2) 실행 -> res = 7. i=2 (2%3=2): case 2(+2) 실행 -> res = 9.',
+        title: 'res = 0 초기화',
+        lineHighlight: 4,
+        description: '스택 1000번지에 누적 변수 res = 0으로 초기화됩니다.',
         memoryState: [
-          { address: '1000번지', name: 'res', value: '9', isChanged: true, scope: 'Stack' }
+          { address: '1000번지', name: 'res', type: 'int', value: '0', scope: 'Stack' }
         ],
         consoleOutput: ''
       },
       {
         stepNumber: 2,
-        title: 'i=3, i=4, i=5 반복 실행',
-        lineHighlight: 6,
-        description: 'i=3: case 0(+10)->19. i=4: case 1(+5) fall-through case 2(+2)->26. i=5: case 2(+2)->28.',
+        title: '루프 1회차 (i=1): 1%3=1 ➔ case 1, 2 Fall-through (res=7)',
+        lineHighlight: [5, 7, 8],
+        description: 'i=1에서 i%3은 1. case 1로 진입하여 res += 5 실행 후 break가 없으므로 아래 case 2(res += 2)까지 연속 실행! res = 0 + 5 + 2 = 7이 됩니다.',
         memoryState: [
-          { address: '1000번지', name: 'res', value: '28', isChanged: true, scope: 'Stack' }
+          { address: '1004번지', name: 'i', type: 'int', value: '1', isChanged: true, scope: 'Stack' },
+          { address: '1000번지', name: 'res', type: 'int', value: '7', previousValue: '0', isChanged: true, changeNote: '0 + 5 + 2 = 7 (Fall-through)', scope: 'Stack' }
         ],
         consoleOutput: ''
       },
       {
         stepNumber: 3,
-        title: '최종 res 출력',
-        lineHighlight: 12,
-        description: '최종 결과 28을 출력합니다.',
-        memoryState: [],
+        title: '루프 2회차 (i=2): 2%3=2 ➔ case 2 (res=9)',
+        lineHighlight: [5, 8],
+        description: '증감식 i++로 i가 2로 증가. 2%3은 2이므로 case 2로 직접 진입하여 res += 2 실행 후 break 탈출. res = 7 + 2 = 9가 됩니다.',
+        memoryState: [
+          { address: '1004번지', name: 'i', type: 'int', value: '2', previousValue: '1', isChanged: true, changeNote: 'i++ (1 ➔ 2)', scope: 'Stack' },
+          { address: '1000번지', name: 'res', type: 'int', value: '9', previousValue: '7', isChanged: true, changeNote: '7 + 2 = 9', scope: 'Stack' }
+        ],
+        consoleOutput: ''
+      },
+      {
+        stepNumber: 4,
+        title: '루프 3회차 (i=3): 3%3=0 ➔ case 0 (res=19)',
+        lineHighlight: [5, 6],
+        description: '증감식 i++로 i가 3으로 증가. 3%3은 0이므로 case 0으로 진입하여 res += 10 실행 후 break 탈출. res = 9 + 10 = 19가 됩니다.',
+        memoryState: [
+          { address: '1004번지', name: 'i', type: 'int', value: '3', previousValue: '2', isChanged: true, changeNote: 'i++ (2 ➔ 3)', scope: 'Stack' },
+          { address: '1000번지', name: 'res', type: 'int', value: '19', previousValue: '9', isChanged: true, changeNote: '9 + 10 = 19', scope: 'Stack' }
+        ],
+        consoleOutput: ''
+      },
+      {
+        stepNumber: 5,
+        title: '루프 4회차 (i=4): 4%3=1 ➔ case 1, 2 Fall-through (res=26)',
+        lineHighlight: [5, 7, 8],
+        description: '증감식 i++로 i가 4로 증가. 4%3은 1이므로 case 1(+5) 진입 후 break 없이 case 2(+2)까지 연속 실행! res = 19 + 5 + 2 = 26이 됩니다.',
+        memoryState: [
+          { address: '1004번지', name: 'i', type: 'int', value: '4', previousValue: '3', isChanged: true, changeNote: 'i++ (3 ➔ 4)', scope: 'Stack' },
+          { address: '1000번지', name: 'res', type: 'int', value: '26', previousValue: '19', isChanged: true, changeNote: '19 + 5 + 2 = 26', scope: 'Stack' }
+        ],
+        consoleOutput: ''
+      },
+      {
+        stepNumber: 6,
+        title: '루프 5회차 (i=5): 5%3=2 ➔ case 2 (res=28)',
+        lineHighlight: [5, 8],
+        description: '증감식 i++로 i가 5로 증가. 5%3은 2이므로 case 2로 진입하여 res += 2 실행 후 break 탈출. res = 26 + 2 = 28이 됩니다.',
+        memoryState: [
+          { address: '1004번지', name: 'i', type: 'int', value: '5', previousValue: '4', isChanged: true, changeNote: 'i++ (4 ➔ 5)', scope: 'Stack' },
+          { address: '1000번지', name: 'res', type: 'int', value: '28', previousValue: '26', isChanged: true, changeNote: '26 + 2 = 28', scope: 'Stack' }
+        ],
+        consoleOutput: ''
+      },
+      {
+        stepNumber: 7,
+        title: '루프 탈출 검사 (i=6): 6 <= 5 거짓으로 for문 종료',
+        lineHighlight: 4,
+        description: '증감식 i++로 i가 6으로 증가. 조건식 6 <= 5가 거짓(False)이 되어 for 반복문을 빠져나옵니다.',
+        memoryState: [
+          { address: '1004번지', name: 'i', type: 'int', value: '6', previousValue: '5', isChanged: true, changeNote: '6 <= 5 거짓 ➔ 루프 종료', scope: 'Stack' },
+          { address: '1000번지', name: 'res', type: 'int', value: '28', scope: 'Stack' }
+        ],
+        consoleOutput: ''
+      },
+      {
+        stepNumber: 8,
+        title: 'printf("%d", res) 최종 결과 출력',
+        lineHighlight: 11,
+        description: '최종 누적된 res의 값인 28이 출력됩니다.',
+        memoryState: [
+          { address: '1000번지', name: 'res', type: 'int', value: '28', scope: 'Stack' }
+        ],
         consoleOutput: '28'
       }
     ]
@@ -454,30 +573,77 @@ int main() {
     steps: [
       {
         stepNumber: 1,
-        title: '주대각선 d1 요소 누적',
-        lineHighlight: 10,
-        description: 'i=0: m[0][0]=2, i=1: m[1][1]=5, i=2: m[2][2]=8. d1 = 2 + 5 + 8 = 15.',
+        title: '3x3 행렬 m 및 d1=0, d2=0 초기화',
+        lineHighlight: [3, 4, 5, 6, 7, 8],
+        description: '행렬 m(1000~1032번지)에 9개 원소가 저장되고, 주대각선 합 d1=0, 부대각선 합 d2=0으로 초기화됩니다.',
         memoryState: [
-          { address: '1020번지', name: 'd1', value: '15', isChanged: true, scope: 'Stack' }
+          { address: '1000번지', name: 'm[0][0]', type: 'int', value: '2', scope: 'Stack' },
+          { address: '1008번지', name: 'm[0][2]', type: 'int', value: '6', scope: 'Stack' },
+          { address: '1016번지', name: 'm[1][1]', type: 'int', value: '5', scope: 'Stack' },
+          { address: '1024번지', name: 'm[2][0]', type: 'int', value: '4', scope: 'Stack' },
+          { address: '1032번지', name: 'm[2][2]', type: 'int', value: '8', scope: 'Stack' },
+          { address: '2000번지', name: 'd1', type: 'int', value: '0', scope: 'Stack' },
+          { address: '2004번지', name: 'd2', type: 'int', value: '0', scope: 'Stack' }
         ],
         consoleOutput: ''
       },
       {
         stepNumber: 2,
-        title: '부대각선 d2 요소 누적',
-        lineHighlight: 11,
-        description: 'i=0: m[0][2]=6, i=1: m[1][1]=5, i=2: m[2][0]=4. d2 = 6 + 5 + 4 = 15.',
+        title: '루프 1회차 (i=0): 0 < 3 참 ➔ m[0][0], m[0][2] 누적',
+        lineHighlight: [9, 10, 11],
+        description: 'i=0. 주대각선 m[0][0](2)을 d1에 누적(d1=2). 부대각선 m[0][2-0](6)을 d2에 누적(d2=6).',
         memoryState: [
-          { address: '1024번지', name: 'd2', value: '15', isChanged: true, scope: 'Stack' }
+          { address: '2008번지', name: 'i', type: 'int', value: '0', isChanged: true, scope: 'Stack' },
+          { address: '2000번지', name: 'd1', type: 'int', value: '2', previousValue: '0', isChanged: true, changeNote: '0 + 2 = 2', scope: 'Stack' },
+          { address: '2004번지', name: 'd2', type: 'int', value: '6', previousValue: '0', isChanged: true, changeNote: '0 + 6 = 6', scope: 'Stack' }
         ],
         consoleOutput: ''
       },
       {
         stepNumber: 3,
-        title: 'd1 - d2 연산 및 출력',
+        title: '루프 2회차 (i=1): 1 < 3 참 ➔ m[1][1], m[1][1] 누적',
+        lineHighlight: [9, 10, 11],
+        description: '증감식 i++로 i가 1로 증가. 주대각선 m[1][1](5)을 d1에 누적(d1=7). 부대각선 m[1][2-1](5)을 d2에 누적(d2=11).',
+        memoryState: [
+          { address: '2008번지', name: 'i', type: 'int', value: '1', previousValue: '0', isChanged: true, changeNote: 'i++ (0 ➔ 1)', scope: 'Stack' },
+          { address: '2000번지', name: 'd1', type: 'int', value: '7', previousValue: '2', isChanged: true, changeNote: '2 + 5 = 7', scope: 'Stack' },
+          { address: '2004번지', name: 'd2', type: 'int', value: '11', previousValue: '6', isChanged: true, changeNote: '6 + 5 = 11', scope: 'Stack' }
+        ],
+        consoleOutput: ''
+      },
+      {
+        stepNumber: 4,
+        title: '루프 3회차 (i=2): 2 < 3 참 ➔ m[2][2], m[2][0] 누적',
+        lineHighlight: [9, 10, 11],
+        description: '증감식 i++로 i가 2로 증가. 주대각선 m[2][2](8)을 d1에 누적(d1=15). 부대각선 m[2][2-2](4)을 d2에 누적(d2=15).',
+        memoryState: [
+          { address: '2008번지', name: 'i', type: 'int', value: '2', previousValue: '1', isChanged: true, changeNote: 'i++ (1 ➔ 2)', scope: 'Stack' },
+          { address: '2000번지', name: 'd1', type: 'int', value: '15', previousValue: '7', isChanged: true, changeNote: '7 + 8 = 15', scope: 'Stack' },
+          { address: '2004번지', name: 'd2', type: 'int', value: '15', previousValue: '11', isChanged: true, changeNote: '11 + 4 = 15', scope: 'Stack' }
+        ],
+        consoleOutput: ''
+      },
+      {
+        stepNumber: 5,
+        title: '루프 탈출 검사 (i=3): 3 < 3 거짓으로 for문 종료',
+        lineHighlight: 9,
+        description: '증감식 i++로 i가 3으로 증가. 조건식 3 < 3이 거짓이 되어 for 루프를 종료합니다.',
+        memoryState: [
+          { address: '2008번지', name: 'i', type: 'int', value: '3', previousValue: '2', isChanged: true, changeNote: '3 < 3 거짓 ➔ 루프 종료', scope: 'Stack' },
+          { address: '2000번지', name: 'd1', type: 'int', value: '15', scope: 'Stack' },
+          { address: '2004번지', name: 'd2', type: 'int', value: '15', scope: 'Stack' }
+        ],
+        consoleOutput: ''
+      },
+      {
+        stepNumber: 6,
+        title: 'printf("%d", d1 - d2) 최종 결과 출력',
         lineHighlight: 13,
-        description: '15 - 15 = 0이 출력됩니다.',
-        memoryState: [],
+        description: 'd1(15) - d2(15) = 0이 최종 출력됩니다.',
+        memoryState: [
+          { address: '2000번지', name: 'd1', type: 'int', value: '15', scope: 'Stack' },
+          { address: '2004번지', name: 'd2', type: 'int', value: '15', scope: 'Stack' }
+        ],
         consoleOutput: '0'
       }
     ]
